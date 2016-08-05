@@ -1,16 +1,20 @@
 require 'nn'
-dofile 'CRF_beta.lua'
---dofile 'CRF.lua'
-config = {K=5, D=8}
+dofile 'CRF.lua'
+config = {K=5, D=8,debug=false}
 x = torch.rand(10,8)
 y = torch.Tensor(10):random(1, 5)
 
 crf = CRF.crf(config)
-f = crf:forward(x,y)
-print('---f----')
-print(f)
-print('-------')
-g = crf:backward(x,y)
-print('---g----')
-print(g)
-print('-------')
+for i=1,20 do
+    f = crf:forward(x,y)
+    g = crf:backward(x,y)
+    print('---i----')
+    print(f)
+    --print(g)
+    --[[
+    print('-------')
+    print('---g----')
+    print('-------')
+    ]]
+    crf:updateParameters(0.01)
+end

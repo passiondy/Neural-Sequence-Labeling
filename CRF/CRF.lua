@@ -2,11 +2,11 @@ CRF = {}
 local crf, parent = torch.class('CRF.crf', 'nn.Module')
 
 function crf:__init(config)
-    self.initState = torch.rand(config.K):csub(0.5)
-    self.transition = torch.rand(config.K, config.K):csub(0.5)
-    self.action = torch.rand(config.K, config.D):csub(0.5)
     self.K = config.K
     self.D = config.D
+    self.initState = torch.rand(config.K):csub(0.5):mul(0.4)
+    self.transition = torch.rand(config.K, config.K):csub(0.5):mul(0.4)
+    self.action = torch.rand(config.K, config.D):csub(0.5):mul(0.4)
     self.gradInitState = torch.zeros(config.K)
     self.gradTransition = torch.zeros(config.K, config.K)
     self.gradAction = torch.zeros(config.K, config.D)
@@ -15,6 +15,32 @@ function crf:__init(config)
     else
         self.debug = false
     end
+    self.training = true --default
+end
+
+function crf:testing()
+    self.training = false
+end
+
+function crf:predict(x)
+    local value = torch.zeros(x:size(1), self.K)
+    local state = torch.zeros(x:size(1)-1, self.K)
+    local G = torch.mm(x, self.action:transpose(1,2))
+    value[1] = G[1]+self.initState
+    for i=2,x:size(1) do
+        local tmp = self.transition + torch.expand(value[i-1]:reshape(self.K, 1), self.K, self.K)
+                    + torch.expand(G[i]:reshape(1, self.K), self.K, self.K)
+        local v, idx = torch.max(tmp, 1)
+        value[i]:copy(v)
+        state[i-1]:copy(idx)
+    end
+    local y = {}
+    local _,idx = torch.max(value, 2)
+    y[x:size(1)] = idx[x:size(1)][1]
+    for i=x:size(1)-1, 1, -1 do
+        y[i] = state[i][y[i+1]]
+    end
+    return y
 end
 
 function crf:forward(x, y)
@@ -44,6 +70,10 @@ end
 
 function crf:forwardPotential(x)
     local G = torch.mm(x, self.action:transpose(1,2))
+    self.G = G
+    if not self.training then
+        return
+    end
     local logF = torch.zeros(x:size(1), self.K)
     logF[1]:copy(self.initState + G[1])
     for i=2,x:size(1) do
@@ -65,7 +95,6 @@ function crf:forwardPotential(x)
         end
     end
     self.logF = logF
-    self.G = G
     self.logZ = self:logSumExp(logF[logF:size(1)], 0)
     if self.debug then print('Z-F', torch.exp(self.logZ)) end
 end

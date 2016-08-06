@@ -59,9 +59,9 @@ function train_model.train(data, config)
                 allLoss = allLoss+bLoss
             return bLoss, dpara
             end
-            --optim.adagrad(feval, para, optim_config)
-            feval()
-            model:updateParameters(lr)
+            optim.adagrad(feval, para, optim_config)
+            --feval()
+            --model:updateParameters(lr)
         end
         print('Elapsed time: ', sys.clock()-start_time)
         print('Obj func value:', allLoss)

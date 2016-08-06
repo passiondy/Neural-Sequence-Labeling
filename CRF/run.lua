@@ -12,8 +12,9 @@ dofile 'train_model.lua'
 dofile 'experiment.lua'
 dofile 'util_function.lua'
 
-local config = {dim_in=300, activation='sigmoid', num_tag=3, maxIter=100, bSize= 1, D=900,K=3}
+local config = {dim_in=300, activation='sigmoid', num_tag=3, maxIter=100, bSize= 100, dim_hidden=400,K=3}
 config.window_size = 3
+config.D = config.dim_hidden
 config.optim_config={learningRate=0.01}
 local direc = '/home/yingding/SequenceLabeling/RNN/data/'
 local para = {}

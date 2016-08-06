@@ -8,6 +8,11 @@ function CrfLabeler:__init(config)
     if wSize > 1 then
         embedding:add(nn.Sequencer(nn.Reshape(1, wSize*config.dim_in)))
     end
+    local hidden = nn.Linear(wSize*config.dim_in, config.dim_hidden)
+    hidden.weight:copy(torch.rand(hidden.weight:size()):csub(0.5):mul(0.4))
+    hidden.bias:copy(torch.rand(hidden.bias:size()):csub(0.5):mul(0.4))
+    embedding:add(nn.Sequencer(hidden))
+    embedding:add(nn.Sequencer(nn.Tanh()))
     embedding:add(nn.JoinTable(1))
     -- initialize look up table
     for i=1, config.V do
@@ -15,7 +20,7 @@ function CrfLabeler:__init(config)
         luTable.weight[i]:copy(vec)
     end
     for i=1,1 do
-        luTable.weight[config.V+i]:copy(torch.rand(config.dim_in):csub(0.5)*0.4)
+        luTable.weight[config.V+i]:copy(torch.rand(config.dim_in):csub(0.5):mul(0.4))
     end
     self.embedding = embedding
     self.crf = CRF.crf(config)
